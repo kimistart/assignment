@@ -17,8 +17,9 @@ func only_one(arr []int) {
 	}
 }
 
-func main() {
+/* func main() {
 	arr := []int{1, 1, 2, 2, 3, 3, 4, 4, 5}
 
 	only_one(arr)
 }
+*/

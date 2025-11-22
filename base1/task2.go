@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 func huiwen(x int) bool {
 
 	if x < 0 {
@@ -26,7 +24,7 @@ func huiwen(x int) bool {
 	return true
 }
 
-func main() {
+/* func main() {
 	arr := []int{1234, 123, 1221, 123321, 1234321, -121}
 	for _, v := range arr {
 		if huiwen(v) {
@@ -36,4 +34,4 @@ func main() {
 		}
 	}
 
-}
+} */
