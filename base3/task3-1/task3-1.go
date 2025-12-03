@@ -7,6 +7,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"gorm.io/driver/mysql"
@@ -14,18 +15,21 @@ import (
 )
 
 type User struct {
-	ID       int
-	UserName string `gorm:"size:255"`
-	Age      int
-	Post     []Post
+	ID        int
+	UserName  string `gorm:"size:255"`
+	Age       uint
+	Post      []Post
+	PostCount uint
 }
 
 type Post struct {
-	ID        int
-	PostTitle string `gorm:"size:255"`
-	UserID    int
-	User      User
-	Comments  []Comment
+	ID            int
+	PostTitle     string `gorm:"size:255"`
+	UserID        int
+	User          User
+	Comments      []Comment
+	CommentCount  uint
+	CommentStatus string `gorm:"size:20"`
 }
 
 type Comment struct {
@@ -37,7 +41,8 @@ type Comment struct {
 
 func main() {
 	var db *gorm.DB
-	dsn := "root:123456@tcp(192.168.111.109:3306)/blog?charset=utf8mb4&parseTime=True&loc=Local"
+	// dsn := "root:123456@tcp(192.168.111.109:3306)/blog?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:123456@tcp(127.0.0.1:3306)/blog?charset=utf8mb4&parseTime=True&loc=Local"
 	var err error
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -48,4 +53,6 @@ func main() {
 	db.AutoMigrate(&User{})
 	db.AutoMigrate(&Post{})
 	db.AutoMigrate(&Comment{})
+
+	fmt.Println("创建完成！")
 }
