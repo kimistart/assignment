@@ -16,7 +16,6 @@ type Student struct {
 
 func main() {
 	var db *gorm.DB
-	// MySQL连接示例（替换为你的数据库信息）
 	dsn := "root:123456@tcp(192.168.111.109:3306)/go_test?charset=utf8mb4&parseTime=True&loc=Local"
 	var err error
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
