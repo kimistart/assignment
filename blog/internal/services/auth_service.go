@@ -3,12 +3,14 @@ package services
 import (
 	"blog/internal/models"
 	"blog/internal/repository/db_mysql"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 const (
@@ -16,26 +18,32 @@ const (
 	defaultPassword = "123456"
 )
 
-func Register(c *gin.Context) {
-	var user models.User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+type AuthService struct {
+	db *gorm.DB
+}
+
+func NewAuthService(db *gorm.DB) *AuthService {
+	return &AuthService{db: db}
+}
+
+func (s *AuthService) Register(userName string, passWord string) (*models.User, error) {
+
 	// 加密密码
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.PassWord), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(passWord), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-		return
+		return nil, errors.New("Failed to hash password")
 	}
-	user.PassWord = string(hashedPassword)
+
+	user := &models.User{
+		UserName: userName,
+		PassWord: string(hashedPassword),
+	}
 
 	if err := db_mysql.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
-		return
+		return nil, errors.New("Failed to create user")
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
+	return user, nil
 }
 
 func Login(c *gin.Context) {

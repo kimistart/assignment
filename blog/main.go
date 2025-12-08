@@ -4,6 +4,7 @@ import (
 	"blog/configs"
 	logger "blog/internal/pkg/logging"
 	"blog/internal/repository/db_mysql"
+	"blog/internal/router"
 	"blog/pkg/env"
 	"blog/pkg/timeutil"
 	"fmt"
@@ -40,4 +41,6 @@ func main() {
 
 	//初始化数据库连接
 	db_mysql.New()
+
+	r := router.SetupRouter()
 }
