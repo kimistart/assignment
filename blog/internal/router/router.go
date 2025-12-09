@@ -15,13 +15,12 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	authService := services.NewAuthService(db)
 	authHandler := handlers.NewAuthHandler(authService)
 
-	router.POST("/user", authHandler.Register) // 新增
-
 	v1 := router.Group("/api/v1")
 	{
 		users := v1.Group("/users")
 		{
 			users.POST("", authHandler.Register)
+			users.POST("/login", authHandler.Login)
 		}
 	}
 
