@@ -4,6 +4,7 @@ import (
 	"blog/internal/models"
 	"blog/internal/repository/db_mysql"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -35,17 +36,13 @@ func (s *AuthService) Register(u models.User) (*models.User, error) {
 		return nil, errors.New("failed to hash password")
 	}
 
-	user := &models.User{
-		Username: u.Username,
-		Password: string(hashedPassword),
-		Email:    u.Email,
-	}
+	u.Password = string(hashedPassword)
 
-	if err := db_mysql.DB.Create(&user).Error; err != nil {
+	if err := db_mysql.DB.Create(&u).Error; err != nil {
 		return nil, errors.New("failed to create user")
 	}
 
-	return user, nil
+	return &u, nil
 }
 
 func (s *AuthService) Login(username string, password string) (string, error) {
@@ -55,10 +52,16 @@ func (s *AuthService) Login(username string, password string) (string, error) {
 		return "", ErrInvalidCredentials
 	}
 
+	log.Println("user", password)
+	log.Println("storedUser", storedUser.Password)
+
 	// 验证密码
 	if err := bcrypt.CompareHashAndPassword([]byte(storedUser.Password), []byte(password)); err != nil {
+		log.Println(err)
 		return "", ErrInvalidCredentials
 	}
+
+	log.Println("验证密码完成", username)
 
 	// 生成 JWT
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -66,6 +69,8 @@ func (s *AuthService) Login(username string, password string) (string, error) {
 		"username": storedUser.Username,
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	})
+
+	log.Println("已生成token", username)
 
 	stringToken, err := token.SignedString([]byte(securityKey))
 	if err != nil {

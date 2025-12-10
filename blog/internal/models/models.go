@@ -7,7 +7,7 @@ import (
 type User struct {
 	gorm.Model
 	Username  string `gorm:"size:255;unique;not null"`
-	Password  string `gorm:"size:20;not null"`
+	Password  string `gorm:"size:100;not null"`
 	Email     string `gorm:"size:100;unique;not null"`
 	Post      []Post
 	PostCount uint
@@ -27,8 +27,8 @@ type Post struct {
 type Comment struct {
 	gorm.Model
 	Content string `gorm:"not null"`
-	UserID  int
+	UserID  uint
 	User    User
-	PostID  int
+	PostID  uint
 	Post    Post
 }
