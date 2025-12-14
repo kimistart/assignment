@@ -1,6 +1,7 @@
 package db_mysql
 
 import (
+	"database/sql"
 	"log"
 
 	"gorm.io/driver/mysql"
@@ -8,6 +9,7 @@ import (
 )
 
 var DB *gorm.DB
+var sqlDB *sql.DB
 
 func New() {
 
@@ -18,5 +20,18 @@ func New() {
 	if err != nil {
 		log.Fatal("failed to connect database")
 	}
+
+	sqlDB, err = DB.DB()
+	if err != nil {
+		log.Fatal("failed to get sql.DB:", err)
+	}
+
 	log.Println("Gorm连接数据库成功！")
+}
+
+func Close() error {
+	if sqlDB != nil {
+		return sqlDB.Close()
+	}
+	return nil
 }
