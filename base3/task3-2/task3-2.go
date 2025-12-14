@@ -55,7 +55,7 @@ func main() {
 func queryPostsAndCommons(db *gorm.DB, user User) {
 	db.First(&user)
 	if user.ID == 0 {
-		fmt.Println("数据库中没有用户")
+		fmt.Println("数据库中没有该用户")
 		return
 	}
 	fmt.Println("查询到用户：", user)
