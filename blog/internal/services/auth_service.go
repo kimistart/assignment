@@ -1,6 +1,7 @@
 package services
 
 import (
+	"blog/configs"
 	"blog/internal/models"
 	"blog/internal/repository/db_mysql"
 	"errors"
@@ -14,11 +15,6 @@ import (
 
 var ErrInvalidCredentials = errors.New("invalid username or password")
 var ErrInternalServer = errors.New("failed to generate token")
-
-const (
-	securityKey = "qkhPAGA13HocW3GAEWwb"
-	// defaultPassword = "123456"
-)
 
 type AuthService struct {
 	db *gorm.DB
@@ -70,9 +66,9 @@ func (s *AuthService) Login(username string, password string) (string, error) {
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	})
 
-	log.Println("已生成token", username)
+	log.Println("已生成token", token)
 
-	stringToken, err := token.SignedString([]byte(securityKey))
+	stringToken, err := token.SignedString([]byte(configs.SecurityKey))
 	if err != nil {
 		return "", ErrInternalServer
 	}

@@ -11,5 +11,5 @@ const (
 	ProjectCronLogFile = "./logs/" + ProjectName + "-cron.log"
 
 	//秘钥
-	securityKey = "qkhPAGA13HocW3GAEWwb"
+	SecurityKey = "qkhPAGA13HocW3GAEWwb"
 )

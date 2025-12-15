@@ -2,6 +2,7 @@ package router
 
 import (
 	"blog/internal/handlers"
+	"blog/internal/middleware"
 	"blog/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -31,7 +32,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	{
 		posts := v2.Group("/posts")
 		{
-			posts.POST("/create", postHandler.CreatePost)
+			posts.POST("/create", middleware.JWTAuth(), postHandler.CreatePost)
 		}
 	}
 
