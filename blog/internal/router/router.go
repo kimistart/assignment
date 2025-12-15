@@ -33,6 +33,8 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		posts := v2.Group("/posts")
 		{
 			posts.POST("/create", middleware.JWTAuth(), postHandler.CreatePost)
+			posts.GET("/list", postHandler.PostList)
+			posts.POST("/update", middleware.IsAuthor(), postHandler.UpdatePost)
 		}
 	}
 

@@ -2,7 +2,11 @@ package middleware
 
 import (
 	"blog/configs"
+	"blog/internal/models"
+	"blog/internal/repository/db_mysql"
 	"log"
+	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
@@ -76,4 +80,37 @@ func parseToken(tokenString string) (jwt.MapClaims, error) {
 	}
 
 	return nil, jwt.NewValidationError("invalid token", jwt.ValidationErrorClaimsInvalid)
+}
+
+func IsAuthor() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+
+		user_id, _ := ctx.Get("user_id")
+
+		post_id := ctx.Param("postId")
+
+		postId, _ := strconv.Atoi(post_id)
+
+		var post models.Post
+
+		result := db_mysql.DB.First(&post, postId)
+		if result.Error != nil {
+			ctx.JSON(404, gin.H{"error": "文章不存在"})
+			ctx.Abort()
+			return
+		}
+
+		userId, _ := user_id.(uint)
+
+		if post.UserID != userId {
+			ctx.JSON(http.StatusForbidden, gin.H{
+				"error": "无权操作此文章",
+			})
+			ctx.Abort()
+			return
+		}
+
+		ctx.Next()
+
+	}
 }
