@@ -3,7 +3,9 @@ package handlers
 import (
 	"blog/internal/models"
 	"blog/internal/services"
+	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -64,6 +66,10 @@ func (h *PostHandler) UpdatePost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"err": "请求参数错误" + err.Error(),
 		})
+
+		log.Println(err)
+
+		return
 	}
 
 	err := h.postService.UpdatePost(post.ID, post.Title, post.Content)
@@ -74,5 +80,25 @@ func (h *PostHandler) UpdatePost(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"msg": "文章更新成功",
+	})
+}
+
+func (h *PostHandler) DeletePost(c *gin.Context) {
+
+	postIDStr := c.Query("id")
+
+	postID, err := strconv.ParseUint(postIDStr, 10, 0)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id必须是数字"})
+		return
+	}
+
+	if err := h.postService.DeletePost(uint(postID)); err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"msg": "文章删除成功",
 	})
 }

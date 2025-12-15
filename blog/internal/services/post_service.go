@@ -4,6 +4,7 @@ import (
 	"blog/internal/models"
 	"blog/internal/repository/db_mysql"
 	"errors"
+	"log"
 
 	"gorm.io/gorm"
 )
@@ -44,4 +45,18 @@ func (s *PostService) UpdatePost(postId uint, title string, content string) (err
 			"title":   title,
 			"content": content,
 		}).Error
+}
+
+func (s *PostService) DeletePost(postId uint) (err error) {
+
+	var post models.Post
+
+	result := db_mysql.DB.Delete(&post, postId)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	log.Println("service:文章删除成功")
+
+	return nil
 }

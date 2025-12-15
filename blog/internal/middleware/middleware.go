@@ -4,9 +4,10 @@ import (
 	"blog/configs"
 	"blog/internal/models"
 	"blog/internal/repository/db_mysql"
+	"bytes"
+	"io"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
@@ -87,13 +88,24 @@ func IsAuthor() gin.HandlerFunc {
 
 		user_id, _ := ctx.Get("user_id")
 
-		post_id := ctx.Param("postId")
+		log.Println("user_id:", user_id)
 
-		postId, _ := strconv.Atoi(post_id)
+		body, _ := io.ReadAll(ctx.Request.Body)
+
+		ctx.Request.Body = io.NopCloser(bytes.NewBuffer(body))
 
 		var post models.Post
 
-		result := db_mysql.DB.First(&post, postId)
+		if err := ctx.ShouldBindJSON(&post); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"err": "请求参数错误" + err.Error(),
+			})
+			return
+		}
+
+		log.Println("post_id:", post.ID)
+
+		result := db_mysql.DB.First(&post, post.ID)
 		if result.Error != nil {
 			ctx.JSON(404, gin.H{"error": "文章不存在"})
 			ctx.Abort()
@@ -109,6 +121,8 @@ func IsAuthor() gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
+
+		ctx.Request.Body = io.NopCloser(bytes.NewBuffer(body))
 
 		ctx.Next()
 

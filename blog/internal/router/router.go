@@ -34,7 +34,8 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		{
 			posts.POST("/create", middleware.JWTAuth(), postHandler.CreatePost)
 			posts.GET("/list", postHandler.PostList)
-			posts.POST("/update", middleware.IsAuthor(), postHandler.UpdatePost)
+			posts.POST("/update", middleware.JWTAuth(), middleware.IsAuthor(), postHandler.UpdatePost)
+			posts.POST("/delete", middleware.JWTAuth(), middleware.IsAuthor(), postHandler.DeletePost)
 		}
 	}
 
