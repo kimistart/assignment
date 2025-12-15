@@ -19,6 +19,9 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	postService := services.NewPostService(db)
 	postHandler := handlers.NewPostHandler(postService)
 
+	commService := services.NewCommService(db)
+	commHandler := handlers.NewCommHandler(commService)
+
 	v1 := router.Group("/api/v1")
 	{
 		users := v1.Group("/users")
@@ -36,6 +39,17 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			posts.GET("/list", postHandler.PostList)
 			posts.POST("/update", middleware.JWTAuth(), middleware.IsAuthor(), postHandler.UpdatePost)
 			posts.POST("/delete", middleware.JWTAuth(), middleware.IsAuthor(), postHandler.DeletePost)
+		}
+	}
+
+	v3 := router.Group("/api/v3")
+	{
+		comms := v3.Group("/comms")
+		{
+			comms.POST("/create", middleware.JWTAuth(), commHandler.CreateComment)
+			/* 			comms.GET("/list", postHandler.PostList)
+			   			comms.POST("/update", middleware.JWTAuth(), middleware.IsAuthor(), postHandler.UpdatePost)
+			   			comms.POST("/delete", middleware.JWTAuth(), middleware.IsAuthor(), postHandler.DeletePost) */
 		}
 	}
 

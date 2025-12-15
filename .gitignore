@@ -1,18 +1,22 @@
-# 第一步：忽略所有文件/文件夹（基础规则）
-*
+# 忽略根目录所有内容
+/*
 
-# 第二步：排除需要追踪的文件/文件夹（! 前缀放行）
-!.gitignore          # 追踪.gitignore本身
-!base1/              # 放行base1文件夹
-!base1/**/*          # 递归追踪base1内所有内容
-!base2/              # 放行base2文件夹
-!base2/**/*          # 递归追踪base2内所有内容
-!base3/              # 放行base3文件夹
-!base3/**/*          # 递归追踪base3内所有内容
-!blog/               # 放行blog文件夹
-!blog/**/*           # 递归追踪blog内所有内容
+# 但放行以下目录
+!/base1/
+!/base2/
+!/base3/
+!/blog/
 
-# 第三步：单独忽略不需要的文件（优先级高于放行规则）
-blog/go.mod          # 忽略blog文件夹内的go.mod（如果有的话）
-blog/go.sum          # 忽略blog文件夹内的go.sum（如果有的话）
-.vscode/             # 忽略编辑器配置
+# 放行这些目录下的所有内容
+!/base1/**
+!/base2/**
+!/base3/**
+!/blog/**
+
+# 放行根目录的必要文件
+!/.gitignore
+!/go.mod
+!/go.sum
+!/README.md
+!/main.go
+!/Makefile
