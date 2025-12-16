@@ -20,3 +20,6 @@
 !/README.md
 !/main.go
 !/Makefile
+
+# 新增：全局忽略 .vscode 目录（所有位置的.vscode都忽略）
+.vscode/

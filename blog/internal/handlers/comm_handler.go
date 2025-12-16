@@ -35,3 +35,31 @@ func (h *CommHandler) CreateComment(c *gin.Context) {
 		"comm": comm.Content,
 	})
 }
+
+func (h *CommHandler) CommsList(c *gin.Context) {
+
+	postId := c.Query("postId")
+
+	if postId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"err": "请选择文章"})
+		return
+	}
+
+	post, err := h.commService.CommsList(postId)
+	if err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		return
+	}
+
+	var commsContents []string
+	for _, comment := range post.Comments {
+		commsContents = append(commsContents, comment.Content)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"msg":      "拉取成功",
+		"title":    post.Title,
+		"comments": commsContents,
+	})
+
+}

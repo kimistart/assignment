@@ -100,6 +100,7 @@ func IsAuthor() gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"err": "请求参数错误" + err.Error(),
 			})
+			ctx.Abort()
 			return
 		}
 

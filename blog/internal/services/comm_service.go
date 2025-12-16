@@ -18,16 +18,19 @@ func NewCommService(db *gorm.DB) *CommService {
 
 func (s *CommService) CreatComment(c models.Comment) (err error) {
 
-	/* 	id, err := strconv.ParseUint(postId, 10, 0)
-	   	if err != nil {
-	   		return nil, errors.New("cov error")
-	   	}
-
-	   	c.PostID = uint(id) */
-
 	if err := db_mysql.DB.Create(&c).Error; err != nil {
-		return errors.New("create comment failed")
+		return errors.New("create comment failed: " + err.Error())
 	}
 
 	return nil
+}
+
+func (s *CommService) CommsList(postId string) (p models.Post, err error) {
+
+	result := db_mysql.DB.Preload("Comments").First(&p, postId)
+	if result.Error != nil {
+		return p, errors.New("create comment failed: " + result.Error.Error())
+	}
+
+	return p, nil
 }

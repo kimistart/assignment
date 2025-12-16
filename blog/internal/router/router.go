@@ -47,9 +47,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		comms := v3.Group("/comms")
 		{
 			comms.POST("/create", middleware.JWTAuth(), commHandler.CreateComment)
-			/* 			comms.GET("/list", postHandler.PostList)
-			   			comms.POST("/update", middleware.JWTAuth(), middleware.IsAuthor(), postHandler.UpdatePost)
-			   			comms.POST("/delete", middleware.JWTAuth(), middleware.IsAuthor(), postHandler.DeletePost) */
+			comms.GET("/list", middleware.JWTAuth(), commHandler.CommsList)
 		}
 	}
 

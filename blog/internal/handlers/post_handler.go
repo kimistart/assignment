@@ -5,7 +5,6 @@ import (
 	"blog/internal/services"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -85,18 +84,24 @@ func (h *PostHandler) UpdatePost(c *gin.Context) {
 
 func (h *PostHandler) DeletePost(c *gin.Context) {
 
-	postIDStr := c.Query("id")
+	var post models.Post
 
-	postID, err := strconv.ParseUint(postIDStr, 10, 0)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "id必须是数字"})
+	if err := c.ShouldBindJSON(&post); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"err": "请求参数错误" + err.Error(),
+		})
+		log.Println(err)
 		return
 	}
 
-	if err := h.postService.DeletePost(uint(postID)); err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+	log.Println("service begin")
+
+	if err := h.postService.DeletePost(post.ID); err != nil {
+		c.JSON(http.StatusConflict, gin.H{"删除error": err.Error()})
 		return
 	}
+
+	log.Println("service end")
 
 	c.JSON(http.StatusOK, gin.H{
 		"msg": "文章删除成功",

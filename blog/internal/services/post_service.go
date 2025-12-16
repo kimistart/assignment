@@ -53,10 +53,12 @@ func (s *PostService) DeletePost(postId uint) (err error) {
 
 	result := db_mysql.DB.Delete(&post, postId)
 	if result.Error != nil {
+
+		log.Println("33")
 		return result.Error
 	}
 
-	log.Println("service:文章删除成功")
+	log.Println("service:文章软删除成功")
 
 	return nil
 }
