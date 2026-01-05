@@ -1,0 +1,6 @@
+{
+  "name": "我的第一个NFT：NFT0",
+  "description": "这是我在测试网发行的图文NFT",
+  "image": "ipfs://bafybeiexo7inzdrwpacsjfutqcglgxs6eo2o3ceaakuv4xho2rgfcevgf4",
+  "attributes": [{"trait_type": "类型", "value": "图文NFT"}]
+}
