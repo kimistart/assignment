@@ -166,7 +166,15 @@ contract NFTMarketplace is ReentrancyGuard {
 
     function _getRoyaltyInfo(
         address nftContract,
-    ){}
+        uint256 tokenId,
+        uint256 salePrice
+    ) internal view returns (address receiver,uint256 royaltyAmount) {
+        if(IERC165(nftContract).supportsInterface(type(IERC2981).interfaceId)) {
+            (receiver,royaltyAmount) = IERC2981(nftContract).royaltyInfo(
+                tokenId,salePrice
+            );
+        }
+    }
 
     //支付足够的ETH，剩余部分返还
     function buyNFT(uint256 listingId) exteranl payable nonReentrant {
@@ -181,7 +189,110 @@ contract NFTMarketplace is ReentrancyGuard {
         uint256 fee = (listing.price * platformFee)/10000;
 
         //版税
+        (address royaltyReceiver,uint256 royaltyAmount) = _getRoyaltyInfo(
+            listing.nftContract,listing.tokenId,listing.price
+        );
 
+        //卖家收益
+        uint256 sellerAmount = listing.price - fee - royaltyAmount;
+
+        //转移NFT
+        IERC721(listing.nftContract).safeTransferFrom(
+            listing.seller,
+            msg.sender,
+            listing.tokenId
+        );
+
+        //分配
+        if(royaltyAmount >0 && royaltyReceiver != address(0)) {
+            (bool successRoyalty,) = royaltyReceiver.call{value:royaltyAmount}("");
+            require(successRoyalty, "Royalty transfer failed");
+        }
+
+        (bool successSeller, ) = listing.seller.call{value:sellerAmount}("");
+        require(successSeller, "Transter to seller failed");
+
+        (bool successFee, ) = feeRecipient.call{value:fee}("");
+        require(successFee, "Transfer fee failed");
+
+        if(msg.value > listing.price) {
+            (bool successRefund, ) = msg.sender.call{
+                    value:msg.value - listing.price
+            }("");
+            require(successRefund, "Transfer refund failed");
+        }
+
+        emit NFTSold(listingId,msg.sender,listing.seller,listing.price);
+    }
+
+    function createAuction(
+        address nftContract,
+        uint256 tokenId,
+        uint256 startPrice,
+        uint256 durationHours
+    ) external returns (uint256) {
+        require(startPrice >0, "Start price must be greater than 0");
+        require(durationHours > 1, "Duration must be at least 1 hour");
+        require(nftContract != address(0), "Invalid NFT contract");
+
+        IERC721 nft = IERC721(nftContract);
+
+        require(nft.ownerOf(tokenId) == msg.sender, "Not the owner");
+
+        require(
+            nft.getApproved(tokenId) == address(this) ||
+            nft.isApprovedForAll(msg.sender,address(this)),
+            "Marketplace not approved"
+        );
+
+        auctionCounter++;
+        auctions[auctionCounter] = Auction({
+            seller:msg.sender,
+            nftContract: nftContract,
+            tokenId: tokenId,
+            startPrice: startPrice,
+            highestBid: 0,
+            highestBidder: address(0),
+            endTime: block.timestamp + (durationHours * 1 hours),
+            active: true
+        });
+
+        emit AuctionCreated(
+            auctionCounter,
+            msg.sender,
+            nftContract,
+            tokenId,
+            startPrice,
+            auctions[auctionCounter].endTime
+        );
+
+        return auctionCounter;
+    }
+
+    function placeBid(uint256 auctionId) external payable {
+        Auction storage auction = auctions[auctionId];
+
+        require(auction.active, "Auction not active");
+        require(block.timestamp < auction.endTime, "Auction ended");
+        require(msg.sender != auction.seller, "Seller cannot bid");
+
+        uint256 minBid;
+        if(auction.highestBid == 0) {
+            minBid = auction.startPrice;
+        } else {
+            minBid = auction.highestBid + (auction.highestBid * 5 / 100); //5% increment
+        }
+
+        require(msg.value >= minBid, "Bid too low");
+
+        if(auction.highestBidder != address(0)) {
+            pendingReturns[auctionId][auction.highestBidder] += auction.highestBid;
+        }
+
+        auction.highestBid = msg.value;
+        auction.highestBidder = msg.sender;
+
+        emit BidPlaced(auctionId,msg.sender,msg.value);
     }
 
 
