@@ -1,21 +1,19 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import "forge-std/src/interfaces/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC2981/IERC2981.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-interface IERC2981 is IERC165 {
-    function royaltyInfo(
-        uint256 tokenId,
-        uint256 salePrice
-    ) external view returns (address receiver,uint256 royaltyAmount);
-}
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-contract NFTMarketplace is ReentrancyGuard {
+contract NFTMarketplace is Initializable, UUPSUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     //挂单结构体
     struct Listing {
@@ -33,7 +31,7 @@ contract NFTMarketplace is ReentrancyGuard {
         uint256 tokenId;
         uint256 startPrice;
         uint256 highestBid;
-        uint256 highestBidder;
+        address highestBidder;
         uint256 endTime;
         bool active;
     }
@@ -49,9 +47,12 @@ contract NFTMarketplace is ReentrancyGuard {
     //待退款映射
     mapping(uint256 => mapping(address => uint256)) public pendingReturns;
 
-    uint256 public platformFee = 250; //2.5%
+    //出价对应的USD
+    mapping(uint256 => mapping(address => uint256)) public bidUsdAmount;
 
     address public feeRecipient;
+
+    uint256 public platformFee;
 
     event NFTListed(
         uint256 indexed listingId,
@@ -65,7 +66,7 @@ contract NFTMarketplace is ReentrancyGuard {
         uint256 indexed listingId
     );
 
-    event priceUpdated(
+    event PriceUpdated(
         uint256 indexed listingId,
         uint256 newPrice
     );
@@ -78,7 +79,7 @@ contract NFTMarketplace is ReentrancyGuard {
     );
 
     event AuctionCreated(
-        uint256 indexed actionId,
+        uint256 indexed auctionId,
         address indexed seller,
         address indexed nftContract,
         uint256 tokenId,
@@ -99,9 +100,37 @@ contract NFTMarketplace is ReentrancyGuard {
         uint256 finalPrice
     );
 
-    constructor(address _feeRecipient) {
+    AggregatorV3Interface internal priceFeed;
+
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address _feeRecipient) external initializer {
+
+        platformFee = 250; //2.5%
+
+        __ReentrancyGuard_init();
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+
         require(_feeRecipient != address(0), "Invalid fee recipient");
         feeRecipient = _feeRecipient;
+
+        priceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
+    }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    function ethToUsd(uint256 ethAmount) public view returns (uint256) {
+        ( ,int256 answer, , , ) = priceFeed.latestRoundData();
+        require(answer > 0, "Invalid price");
+        return (ethAmount * uint256(answer)) / 1e8;
+    }
+
+    function getHighestBidUsd(uint256 auctionId) external view returns (uint256) {
+        Auction storage auction = auctions[auctionId];
+        return ethToUsd(auction.highestBid);
     }
 
     function listNFT(
@@ -122,7 +151,7 @@ contract NFTMarketplace is ReentrancyGuard {
         );
 
         listingCounter++;
-        listings[listinCounter] = Listing({
+        listings[listingCounter] = Listing({
             seller:msg.sender,
             nftContract: nftContract,
             tokenId: tokenId,
@@ -177,7 +206,7 @@ contract NFTMarketplace is ReentrancyGuard {
     }
 
     //支付足够的ETH，剩余部分返还
-    function buyNFT(uint256 listingId) exteranl payable nonReentrant {
+    function buyNFT(uint256 listingId) external payable nonReentrant {
         Listing storage listing = listings[listingId];
 
         require(listing.active, "Listing not active");
@@ -210,7 +239,7 @@ contract NFTMarketplace is ReentrancyGuard {
         }
 
         (bool successSeller, ) = listing.seller.call{value:sellerAmount}("");
-        require(successSeller, "Transter to seller failed");
+        require(successSeller, "Transfer to seller failed");
 
         (bool successFee, ) = feeRecipient.call{value:fee}("");
         require(successFee, "Transfer fee failed");
@@ -276,6 +305,7 @@ contract NFTMarketplace is ReentrancyGuard {
         require(block.timestamp < auction.endTime, "Auction ended");
         require(msg.sender != auction.seller, "Seller cannot bid");
 
+        // 计算最低出价
         uint256 minBid;
         if(auction.highestBid == 0) {
             minBid = auction.startPrice;
@@ -285,12 +315,17 @@ contract NFTMarketplace is ReentrancyGuard {
 
         require(msg.value >= minBid, "Bid too low");
 
+        // 如果有之前的出价者，记录他们的待退款金额
         if(auction.highestBidder != address(0)) {
             pendingReturns[auctionId][auction.highestBidder] += auction.highestBid;
         }
 
+        // 更新最高出价
         auction.highestBid = msg.value;
         auction.highestBidder = msg.sender;
+
+        uint256 usdValue = ethToUsd(msg.value);
+        bidUsdAmount[auctionId][msg.sender] = usdValue;
 
         emit BidPlaced(auctionId,msg.sender,msg.value);
     }
@@ -349,6 +384,7 @@ contract NFTMarketplace is ReentrancyGuard {
         } else {
             emit AuctionEnded(auctionId,address(0),0);
         }
+    }
 
         function getListing(uint256 listingId) external view returns (
             address seller,
@@ -390,32 +426,15 @@ contract NFTMarketplace is ReentrancyGuard {
             );
         }
 
-        function setPlatformFee(uint256 newFee) external {
-            require(msg.sender == feeRecipient, "Not fee recipient");
-            require(newFee <= 1000, "Fee too high"); //最大10%
-            platformFee = newFee;
-        }
+            function setPlatformFee(uint256 newFee) external {
+                require(msg.sender == feeRecipient, "Not fee recipient");
+                require(newFee <= 1000, "Fee too high"); //最大10%
+                platformFee = newFee;
+            }
 
-        function updateFeeRecipient(address newRecipient) external {
-            require(msg.sender == feeRecipient, "Not fee recipient");
-            require(newRecipient != address(0), "Invalid address")
-            feeRecipient = newRecipient;
-        }
+            function updateFeeRecipient(address newRecipient) external {
+                require(msg.sender == feeRecipient, "Not fee recipient");
+                require(newRecipient != address(0), "Invalid address");
+                feeRecipient = newRecipient;
+            }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}
