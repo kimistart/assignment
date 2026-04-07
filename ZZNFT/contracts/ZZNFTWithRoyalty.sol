@@ -24,7 +24,7 @@ contract ZZNFTWithRoyalty is ERC721, ERC721URIStorage, Ownable,IERC2981,ERC165 {
     constructor(
         address royaltyReceiver,
         uint96 royaltyBps
-    ) ERC721("ZZNFTWithRoyalty", "ZNFR") Ownable(msg.sender) {
+    ) ERC721("ZZNFTWithRoyalty", "NFR") Ownable(msg.sender) {
         require(royaltyReceiver != address(0), "Invalid royalty receiver");
         require(royaltyBps <1000, "Royalty too high"); //最大10%
 

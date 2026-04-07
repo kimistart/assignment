@@ -295,6 +295,114 @@ contract NFTMarketplace is ReentrancyGuard {
         emit BidPlaced(auctionId,msg.sender,msg.value);
     }
 
+    function withdrawBid(uint256 auctionId) external {
+        uint256 amount = pendingReturns[auctionId][msg.sender];
+        require(amount > 0, "No pending return");
+
+        pendingReturns[auctionId][msg.sender] = 0;
+
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success, "Transfer failed");
+    }
+
+    function endAuction(uint256 auctionId) external nonReentrant {
+        Auction storage auction = auctions[auctionId];
+
+        require(auction.active, "Auction not active");
+        require(block.timestamp >= auction.endTime, "Auction not ended");
+
+        auction.active = false;
+
+        if(auction.highestBidder != address(0)) {
+            uint256 fee = (auction.highestBid * platformFee)/10000;
+
+            (address royaltyReceiver,uint256 royaltyAmount) = _getRoyaltyInfo(
+                auction.nftContract,
+                auction.tokenId,
+                auction.highestBid
+            );
+
+            uint256 sellerAmount = auction.highestBid - fee - royaltyAmount;
+
+            IERC721(auction.nftContract).safeTransferFrom(
+                auction.seller,
+                auction.highestBidder,
+                auction.tokenId
+            );
+
+            if(royaltyAmount > 0 && royaltyReceiver != address(0)) {
+                (bool successSeller, ) = royaltyReceiver.call{value: royaltyAmount}("");
+                require(successRoyalty, "Royalty transfer failed");
+            }
+
+            (bool successSeller, ) = auction.seller.call{value: sellerAmount}("");
+            require(successSeller, "Transfer to seller failed");
+
+            (bool successFee, ) = feeRecipient.call{value: fee}("");
+            require(successFee, "Transfer fee failed");
+
+            emit AuctionEnded(
+                auctionId,
+                auction.highestBidder,
+                auction.highestBid
+            );
+        } else {
+            emit AuctionEnded(auctionId,address(0),0);
+        }
+
+        function getListing(uint256 listingId) external view returns (
+            address seller,
+            address nftContract,
+            uint256 tokenId,
+            uint256 price,
+            bool active
+        ) {
+            Listing memory listing = listings[listingId];
+            return (
+                listing.seller,
+                listing.nftContract,
+                listing.tokenId,
+                listing.price,
+                listing.active
+            );
+        }
+
+        function getAuction(uint256 auctionId) external view returns (
+            address seller,
+            address nftContract,
+            uint256 tokenId,
+            uint256 startPrice,
+            uint256 highestBid,
+            address highestBidder,
+            uint256 endTime,
+            bool active
+        ) {
+            Auction memory auction = auctions[auctionId];
+            return (
+                auction.seller,
+                auction.nftContract,
+                auction.tokenId,
+                auction.startPrice,
+                auction.highestBid,
+                auction.highestBidder,
+                auction.endTime,
+                auction.active
+            );
+        }
+
+        function setPlatformFee(uint256 newFee) external {
+            require(msg.sender == feeRecipient, "Not fee recipient");
+            require(newFee <= 1000, "Fee too high"); //最大10%
+            platformFee = newFee;
+        }
+
+        function updateFeeRecipient(address newRecipient) external {
+            require(msg.sender == feeRecipient, "Not fee recipient");
+            require(newRecipient != address(0), "Invalid address")
+            feeRecipient = newRecipient;
+        }
+    }
+
 
 
 
