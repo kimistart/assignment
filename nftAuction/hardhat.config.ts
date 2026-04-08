@@ -1,4 +1,5 @@
 import hardhatToolboxMochaEthersPlugin from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
+import ethersChaiMatchersPlugin from "@nomicfoundation/hardhat-ethers-chai-matchers";
 import { configVariable, defineConfig } from "hardhat/config";
 
 export default defineConfig({
