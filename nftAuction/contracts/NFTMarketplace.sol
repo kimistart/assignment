@@ -6,14 +6,14 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract NFTMarketplace is Initializable, UUPSUpgradeable, OwnableUpgradeable, ReentrancyGuard  {
+
+contract NFTMarketplace is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
     //拍卖结构体
     struct Auction {
@@ -65,11 +65,7 @@ contract NFTMarketplace is Initializable, UUPSUpgradeable, OwnableUpgradeable, R
 
     AggregatorV3Interface internal priceFeed;
 
-    constructor() {
-        _disableInitializers();
-    }
-
-    function initialize(address _feeRecipient) external initializer {
+    function initialize(address _feeRecipient, address _priceFeed) external initializer {
 
         platformFee = 250; //2.5%
 
@@ -78,7 +74,7 @@ contract NFTMarketplace is Initializable, UUPSUpgradeable, OwnableUpgradeable, R
         require(_feeRecipient != address(0), "Invalid fee recipient");
         feeRecipient = _feeRecipient;
 
-        priceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
+        priceFeed = AggregatorV3Interface(_priceFeed);
     }
 
     function _authorizeUpgrade(address) internal override onlyOwner {}
@@ -104,6 +100,7 @@ contract NFTMarketplace is Initializable, UUPSUpgradeable, OwnableUpgradeable, R
                 tokenId,salePrice
             );
         }
+        return (receiver,royaltyAmount);
     }
 
     function createAuction(
@@ -192,7 +189,7 @@ contract NFTMarketplace is Initializable, UUPSUpgradeable, OwnableUpgradeable, R
         require(success, "Transfer failed");
     }
 
-    function endAuction(uint256 auctionId) external nonReentrant {
+    function endAuction(uint256 auctionId) external {
         Auction storage auction = auctions[auctionId];
 
         require(auction.active, "Auction not active");

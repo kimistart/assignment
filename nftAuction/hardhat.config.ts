@@ -1,39 +1,25 @@
-import hardhatToolboxMochaEthersPlugin from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
-import ethersChaiMatchersPlugin from "@nomicfoundation/hardhat-ethers-chai-matchers";
-import { configVariable, defineConfig } from "hardhat/config";
+import "@nomicfoundation/hardhat-toolbox";
+import "@openzeppelin/hardhat-upgrades";
+import dotenv from "dotenv";
 
-export default defineConfig({
-  plugins: [hardhatToolboxMochaEthersPlugin],
+dotenv.config();
+
+export default {
   solidity: {
-    profiles: {
-      default: {
-        version: "0.8.28",
-      },
-      production: {
-        version: "0.8.28",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-    },
+    version: "0.8.28",
+    settings: {
+      evmVersion: "cancun", // 关键配置
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    }
   },
   networks: {
-    hardhatMainnet: {
-      type: "edr-simulated",
-      chainType: "l1",
-    },
-    hardhatOp: {
-      type: "edr-simulated",
-      chainType: "op",
-    },
+    hardhat: {},
     sepolia: {
-      type: "http",
-      chainType: "l1",
-      url: configVariable("SEPOLIA_RPC_URL"),
-      accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
+      url: process.env.SEPOLIA_RPC_URL || "",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY!] : [],
     },
   },
-});
+};
