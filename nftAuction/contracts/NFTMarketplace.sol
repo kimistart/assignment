@@ -2,15 +2,16 @@
 
 pragma solidity ^0.8.28;
 
+import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts/interfaces/IERC2981.sol";
+
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import "@openzeppelin/contracts/interfaces/IERC2981.sol";
-import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
-
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "hardhat/console.sol";
 
 
 contract NFTMarketplace is Initializable, UUPSUpgradeable, OwnableUpgradeable {
@@ -88,19 +89,6 @@ contract NFTMarketplace is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     function getHighestBidUsd(uint256 auctionId) external view returns (uint256) {
         Auction storage auction = auctions[auctionId];
         return ethToUsd(auction.highestBid);
-    }
-
-    function _getRoyaltyInfo(
-        address nftContract,
-        uint256 tokenId,
-        uint256 salePrice
-    ) internal view returns (address receiver,uint256 royaltyAmount) {
-        if(IERC165(nftContract).supportsInterface(type(IERC2981).interfaceId)) {
-            (receiver,royaltyAmount) = IERC2981(nftContract).royaltyInfo(
-                tokenId,salePrice
-            );
-        }
-        return (receiver,royaltyAmount);
     }
 
     function createAuction(
@@ -200,8 +188,7 @@ contract NFTMarketplace is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         if(auction.highestBidder != address(0)) {
             uint256 fee = (auction.highestBid * platformFee)/10000;
 
-            (address royaltyReceiver,uint256 royaltyAmount) = _getRoyaltyInfo(
-                auction.nftContract,
+            (address royaltyReceiver,uint256 royaltyAmount) = IERC2981(auction.nftContract).royaltyInfo(
                 auction.tokenId,
                 auction.highestBid
             );

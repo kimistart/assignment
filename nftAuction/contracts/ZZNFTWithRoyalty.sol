@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/interfaces/IERC2981.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/interfaces/IERC2981.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "hardhat/console.sol";
 
 contract ZZNFTWithRoyalty is ERC721, ERC721URIStorage, Ownable,IERC2981 {
 
@@ -57,6 +58,7 @@ contract ZZNFTWithRoyalty is ERC721, ERC721URIStorage, Ownable,IERC2981 {
     ) {
         receiver = _royaltyReceiver;
         royaltyAmount = (salePrice * _royaltyBps)/1000;
+        return (receiver, royaltyAmount);
     }
 
     function setRoyaltyInfo(address receiver, uint96 bps) external onlyOwner {
@@ -80,7 +82,7 @@ contract ZZNFTWithRoyalty is ERC721, ERC721URIStorage, Ownable,IERC2981 {
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721,ERC721URIStorage,IERC165) returns (bool){
-        return super.supportsInterface(interfaceId);
+        return interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
     }
 
     function totalSupply() public view returns (uint256) {
