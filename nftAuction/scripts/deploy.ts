@@ -7,8 +7,9 @@ async function main() {
     // 1. 部署 NFT 合约 (ZZNFTWithRoyalty.sol)
     // ==========================================
     console.log("\n📦 部署 ZZNFTWithRoyalty...");
+    const [deployer] = await ethers.getSigners();
     const ZZNFT = await ethers.getContractFactory("ZZNFTWithRoyalty");
-    const nft = await ZZNFT.deploy();
+    const nft = await ZZNFT.deploy(deployer.address,100);
     await nft.deployed();
     console.log("✅ ZZNFTWithRoyalty 部署成功，地址：", nft.address);
 
