@@ -14,8 +14,6 @@ import(
 
 func main() {
 
-    rpcURL := "https://sepolia.infura.io/v3/64334571aca94de48a1d277730b234cf"
-    key := "540c410860417ee5c9611b4a0e98533cd14a4dc9f717b6f2eea0f0f4da2261b6"//anvil私钥
 //     contractHex := flag.String("contract","","Counter.sol")
 //     flag.Parse()
 
