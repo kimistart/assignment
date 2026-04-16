@@ -106,3 +106,14 @@ func main() {
     }
     fmt.Printf("调用后计数: %s\n", newCount.String())
 }
+
+/**
+zhaojingyi@DESKTOP-OHF4HJ2 MINGW64 /d/goProject/meta_node/sepolia-demo (master)
+$ go run main.go
+2026/04/16 11:53:40 部署成功！合约地址： 0x6a21dDD9Ac2d29E5f450eD12568704b0D925Ae8F
+Contact: 0x6a21dDD9Ac2d29E5f450eD12568704b0D925Ae8F
+当前计数：0
+increment交易哈希:0xfee7f8dc89b68c42f126ffe79ea332d8f182aab97e64d1bda4de80eecf3e4d5b
+交易确认于区块:10668968
+调用后计数: 1
+*/
