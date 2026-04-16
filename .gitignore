@@ -10,6 +10,7 @@
 !/blog
 !/solidity
 !/nftAuction
+!/base5
 
 # ==============================================
 # 2. 放行根目录需要提交的目录（一次性放行目录+所有子内容）
@@ -20,6 +21,7 @@
 !/blog/**
 !/solidity/**
 !/nftAuction/**
+!/base5/**
 # 如果你需要提交 my-hardhat3-project/go-gin-api，也在这里放行：
 # !/my-hardhat3-project/**
 # !/go-gin-api/**
