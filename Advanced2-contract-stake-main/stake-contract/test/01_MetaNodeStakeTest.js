@@ -98,12 +98,23 @@ describe("stake test", async function () {
     it("setEndBlock", async () => {
         const startBlock = await stakeProxyContract.startBlock()
         const endBlock = startBlock + 100n
+
+        const errEndBlock = startBlock - 1n
+        await expect(stakeProxyContract.connect(admin).setEndBlock(errEndBlock)
+        ).to.to.revertedWith("start block must be smaller than end block")
+
         await stakeProxyContract.connect(admin).setEndBlock(endBlock)
         const res = await stakeProxyContract.endBlock()
         expect(res).to.eq(endBlock)
     })
 
     it("addPool", async () => {
+
+        const endBlock = await stakeProxyContract.endBlock()
+        errStartBlock = endBlock+1n
+        await expect(stakeProxyContract.connect(admin).setStartBlock(errStartBlock)
+        ).to.be.revertedWith("start block must be smaller than end block")
+
         const tokenAddress = await erc20Contract.getAddress()
         // 质押池的权重，影响奖励分配
         const poolWeight = 10
