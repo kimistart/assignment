@@ -11,6 +11,7 @@
 !/solidity
 !/nftAuction
 !/base5
+!/Advanced2-contract-stake-main
 
 # ==============================================
 # 2. 放行根目录需要提交的目录（一次性放行目录+所有子内容）
@@ -22,9 +23,11 @@
 !/solidity/**
 !/nftAuction/**
 !/base5/**
+!/Advanced2-contract-stake-main/**
 # 如果你需要提交 my-hardhat3-project/go-gin-api，也在这里放行：
 # !/my-hardhat3-project/**
 # !/go-gin-api/**
+
 
 # ==============================================
 # 3. 放行根目录的必要文件（必须放在/*之后，才能覆盖忽略）
