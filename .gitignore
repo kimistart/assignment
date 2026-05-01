@@ -24,9 +24,7 @@
 !/nftAuction/**
 !/base5/**
 !/Advanced2-contract-stake-main/**
-# 如果你需要提交 my-hardhat3-project/go-gin-api，也在这里放行：
-# !/my-hardhat3-project/**
-# !/go-gin-api/**
+
 
 
 # ==============================================
@@ -68,3 +66,5 @@
 **/*.log
 **/tmp/
 **/temp/
+!/uniswap
+!/uniswap/v2/v2-periphery-master/**
